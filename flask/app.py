@@ -2,6 +2,8 @@ from flask import Flask, request
 import hashlib
 import urllib.parse
 import json
+import re
+import html
 import requests
 
 app = Flask(__name__)
@@ -60,6 +62,20 @@ def generate_signature(post_data: dict, app_key: str) -> str:
 
     # 计算 md5（返回小写）
     return hashlib.md5(final_str.encode("utf-8")).hexdigest()
+
+
+# ===== 清洗 HTML：工单内容/标题可能带富文本标签 =====
+def clean_text(value) -> str:
+    if value is None:
+        return ""
+    text = str(value)
+    text = re.sub(r"(?i)<br\s*/?>", "\n", text)
+    text = re.sub(r"(?i)</p\s*>", "\n", text)
+    text = re.sub(r"<[^>]+>", "", text)
+    text = html.unescape(text)
+    text = text.replace("\xa0", " ")
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
 
 
 # ===== 写日志 =====
@@ -216,13 +232,13 @@ def ticket():
     msg = (
         f"🎫 异次元发卡 · {event_text}\n"
         f"工单号：{ticket_info.get('ticket_no', '')}\n"
-        f"标题：{ticket_info.get('title', '')}\n"
+        f"标题：{clean_text(ticket_info.get('title', ''))}\n"
         f"类型：{ticket_type}　优先级：{priority}\n"
         f"状态：{status}\n"
         f"关联商品：{ticket_info.get('commodity_name', '') or '无'}\n"
         f"关联订单：{ticket_info.get('order_trade_no', '') or '无'}\n"
-        f"发送人：{message.get('sender_name', '')}\n"
-        f"内容：{message.get('content', '')}\n"
+        f"发送人：{clean_text(message.get('sender_name', ''))}\n"
+        f"内容：{clean_text(message.get('content', ''))}\n"
         f"时间：{notify_time}\n"
     )
 
