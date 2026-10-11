@@ -91,27 +91,53 @@ flask/app.py                   # 配套 Flask 接收端（含订单 /recharge + 
 - 对标题/发送人/内容做 HTML 清洗（去除富文本标签、转义实体），避免推送里出现 `<p>...</p>`。
 - 日志写入 `ticket.txt`。
 
-### 配置（环境变量）
+### 配置方式
 
-敏感信息**不要写死在代码里**，通过环境变量注入：
+敏感信息**不要写死在代码里**。`app.py` 的读取顺序是：**同目录的 `config.json` → 环境变量**。
 
-| 环境变量 | 说明 |
+推荐用 `config.json`（最简单，不用改 systemd）：
+
+1. 在 `app.py` 同目录新建 `config.json`（已加入 `.gitignore`，**不要提交**）：
+
+   ```json
+   {
+     "RECHARGE_KEY": "你的订单密钥",
+     "TICKET_KEY": "你的工单密钥",
+     "TG_BOT_TOKEN": "你的Bot Token",
+     "TG_CHAT_ID": "你的Chat ID"
+   }
+   ```
+
+2. 收紧权限（只有运行用户可读）：
+
+   ```bash
+   chmod 600 config.json
+   ```
+
+3. 启动：
+
+   ```bash
+   pip install flask requests
+   python app.py            # 监听 0.0.0.0:8000
+   ```
+
+也可以改用环境变量（`config.json` 不存在时生效），适合 systemd `Environment=` 或容器部署：
+
+```bash
+export RECHARGE_KEY="你的订单密钥"
+export TICKET_KEY="你的工单密钥"
+export TG_BOT_TOKEN="你的Bot Token"
+export TG_CHAT_ID="你的Chat ID"
+```
+
+| 键 | 说明 |
 | --- | --- |
 | `RECHARGE_KEY` | 订单接口 `/recharge` 的通信密钥（与订单插件一致） |
 | `TICKET_KEY` | 工单接口 `/ticket` 的通信密钥（与本插件配置页里填的密钥一致） |
 | `TG_BOT_TOKEN` | Telegram Bot Token |
 | `TG_CHAT_ID` | Telegram 接收消息的 Chat ID |
 
-启动（示例，使用 systemd 或直接运行）：
-
-```bash
-pip install flask requests
-export RECHARGE_KEY="你的订单密钥"
-export TICKET_KEY="你的工单密钥"
-export TG_BOT_TOKEN="你的Bot Token"
-export TG_CHAT_ID="你的Chat ID"
-python app.py            # 监听 0.0.0.0:8000
-```
+> 修改 `config.json` 后需重启服务（Flask 的 `debug=True` 会自动重载，但生产环境请手动重启）。
 
 > 生产环境建议用 gunicorn/uwsgi 替代 Flask 内置的开发服务器，并关闭 `debug=True`。
 

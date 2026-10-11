@@ -10,11 +10,26 @@ import requests
 app = Flask(__name__)
 
 # ===== 配置 =====
-# 建议用环境变量注入，不要硬编码在代码里
-APP_KEY = os.environ.get("RECHARGE_KEY", "your_recharge_key")      # 订单接口密钥（/recharge）
-TICKET_KEY = os.environ.get("TICKET_KEY", "your_ticket_key")       # 工单接口独立密钥（/ticket），与订单分开
-TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "your_telegram_bot_token")
-TG_CHAT_ID = os.environ.get("TG_CHAT_ID", "your_telegram_chat_id")
+# 优先从同目录 config.json 读取；读不到再回退到环境变量。
+# config.json 已被 .gitignore 忽略，不要提交到仓库。
+_CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+_cfg = {}
+if os.path.exists(_CONFIG_FILE):
+    try:
+        with open(_CONFIG_FILE, "r", encoding="utf-8") as f:
+            _cfg = json.load(f)
+    except Exception as e:
+        print("config.json 读取失败:", e)
+
+
+def _cfg_get(key):
+    return _cfg.get(key) or os.environ.get(key, "")
+
+
+APP_KEY = _cfg_get("RECHARGE_KEY")          # 订单接口密钥（/recharge）
+TICKET_KEY = _cfg_get("TICKET_KEY")         # 工单接口独立密钥（/ticket），与订单分开
+TG_BOT_TOKEN = _cfg_get("TG_BOT_TOKEN")
+TG_CHAT_ID = _cfg_get("TG_CHAT_ID")
 
 
 # ===== 发送 Telegram 消息 =====
