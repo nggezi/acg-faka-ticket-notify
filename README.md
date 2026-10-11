@@ -1,24 +1,43 @@
-# acg-faka 工单提醒插件 (TicketNotify)
+# acg-faka 工单提醒插件
 
 异次元发卡系统（acg-faka）插件：当**用户创建工单**或**用户回复工单**时，自动将工单与消息内容带上 MD5 签名，POST 到站长自定义的 API 地址，用于推送到 Telegram 等渠道。
 
 本仓库同时包含配套的 Flask 接收端示例（`flask/app.py`），可直接复用店内已有的订单通知服务，仅新增 `/ticket` 路由。
 
+## 为什么插件目录叫 `Demo` 而不是 `TicketNotify`
+
+> 这一段很关键，请先读完再安装。
+
+acg-faka 的插件启用入口 `_plugin_start()` 是 **kernel/Plugin.php 内的专有加密函数**，它只允许**官方商店授权过**的插件被启用：
+- 商店插件（如 `Demo`、`ApiNotification`）点「启用」会正常写入 STATUS 并注册钩子缓存；
+- 纯本地手写的插件名（如 `TicketNotify`）点「启用」会**静默失败**（后台闪一下仍是「未启用」），因为该函数会拒绝未经商店授权的插件名。
+
+因此本插件的做法是：**借用一个商店插件目录名（`Demo`）作为载体**，把工单通知逻辑放进该目录的 `Hook/` 里。
+由于钩子注册是**整个 `Hook/` 目录扫描**的，系统会把我们新增的钩子类一并注册，并且后台「启用 / 停用」按钮能正常维护它——不再需要任何手工干预。
+
+- 后台插件列表中显示的插件名由 `Config/Info.php` 的 `Plugin::NAME` 决定，本项目已改为 **工单提醒**。
+- 目录名保留为 `Demo` 只是为了通过商店授权校验，**请勿改回 `TicketNotify` 之类的本地名**，否则启用会再次失败。
+
+If you are on a build where local plugins *are* authorized, you can rename the directory freely and adjust namespaces accordingly.
+
 ## 目录结构
 
 ```
-plugin/TicketNotify/          # 发卡系统插件（放到 app/Plugin/ 下）
-├── Config/Info.php           # 插件信息（必填）
-├── Config/Config.php         # 默认配置
-├── Config/Submit.php         # 后台配置表单
-└── Hook/Main.php             # 钩子实现
+plugin/Demo/                   # 放到发卡系统 app/Plugin/ 下（目录名必须为 Demo）
+├── Config/Info.php            # 插件信息（显示名「工单提醒」）
+├── Config/Config.php          # 默认配置（含 API 地址 / 密钥 / 开关）
+├── Config/Submit.php          # 后台配置表单
+├── Hook/TicketNotify.php      # 工单钩子实现（本项目的核心）
+├── Hook/Demo.php              # 商店插件原有的菜单钩子（保留，用于左侧菜单）
+├── Controller/Demo.php        # 菜单页控制器
+└── View/Menu.html, Demo.html  # 左侧菜单与说明页
 
-flask/app.py                  # 配套 Flask 接收端（含订单 /recharge + 工单 /ticket）
+flask/app.py                   # 配套 Flask 接收端（含订单 /recharge + 工单 /ticket）
 ```
 
 ## 工作原理
 
-插件订阅两个钩子点位（在事务提交后触发，钩子异常不会影响接口结果）：
+插件订阅两个钩子点位（在数据库事务提交后触发，钩子内的异常不会影响接口结果）：
 
 | 点位 | 常量 | 触发时机 |
 | --- | --- | --- |
@@ -49,13 +68,18 @@ flask/app.py                  # 配套 Flask 接收端（含订单 /recharge + �
 
 ## 安装
 
-1. 将 `plugin/TicketNotify` 整个目录复制到发卡系统 `app/Plugin/` 下。
-2. 确保目录属主与站点一致（如 `www:www`），并具备读权限。
+1. 将 `plugin/Demo` 整个目录复制到发卡系统 `app/Plugin/` 下（**保持目录名为 `Demo`**）。
+2. 修正属主与权限（站点一般以 `www` 运行）：
+   ```bash
+   chown -R www:www app/Plugin/Demo
+   find app/Plugin/Demo -type d -exec chmod 755 {} +
+   find app/Plugin/Demo -type f -exec chmod 644 {} +
+   ```
 3. 后台「插件」页面找到 **工单提醒**，点击启用，并在配置页填写：
    - **API 地址**：如 `http://127.0.0.1:8000/ticket`
    - **通信密钥**：与接收端约定的独立密钥（勿与订单插件共用）
-   - 请求方式、附加参数、请求头（可选）、是否记录日志
-4. 保存配置。若之后修改了 `Hook` 文件，需**先禁用再启用**插件以重建钩子缓存。
+   - 请求方式、附加参数、请求头（可选）、是否记录日志、事件开关
+4. 保存配置。若之后修改了 `Hook/` 文件，需**先停用再启用**插件以重建钩子缓存。
 
 ## 配套 Flask 接收端
 

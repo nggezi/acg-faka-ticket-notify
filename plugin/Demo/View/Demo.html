@@ -1,0 +1,20 @@
+#{include file=$manage_view_path|cat:"/Header.html"}
+<!--begin::Content-->
+<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    <!--begin::Toolbar-->
+    #{include file=$manage_view_path|cat:"Toolbar.html"}
+    <!--end::Toolbar-->
+    <!--begin::Post-->
+    <div class="post d-flex flex-column-fluid">
+        <!--begin::Container-->
+        <div class="container-fluid">
+            <h4>工单提醒插件</h4><p>用户创建工单或回复工单后，插件会将工单信息发送到你配置的 API 地址。</p><p>请在插件列表中点击本插件的「配置」按钮填写 API 地址与通信密钥。</p>
+        </div>
+        <!--end::Container-->
+    </div>
+    <!--end::Post-->
+</div>
+<!--end::Content-->
+<script>
+</script>
+#{include file=$manage_view_path|cat:"/Footer.html"}

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace App\Plugin\TicketNotify\Hook;
+namespace App\Plugin\Demo\Hook;
 
 use App\Model\Ticket;
 use App\Model\TicketMessage;
@@ -11,37 +11,25 @@ use App\Util\Str;
 use Kernel\Annotation\Hook;
 
 /**
- * 工单提醒插件
- *
- * 订阅用户创建工单、用户回复工单两个点位，将工单与消息信息带上 MD5 签名后
- * 发送到站长自定义的 API 地址。
+ * 工单提醒（挂载于 Demo 插件身份下，以通过商店授权校验）
  */
-class Main
+class TicketNotify
 {
-    /**
-     * 用户创建工单后触发
-     */
     #[Hook(point: 0x2100)]
     public function OnCreate(Ticket $ticket, TicketMessage $message): void
     {
         $this->notify('create', $ticket, $message);
     }
 
-    /**
-     * 用户回复工单后触发
-     */
     #[Hook(point: 0x2101)]
     public function OnReply(Ticket $ticket, TicketMessage $message): void
     {
         $this->notify('reply', $ticket, $message);
     }
 
-    /**
-     * 组装数据并请求自定义 API
-     */
     private function notify(string $event, Ticket $ticket, TicketMessage $message): void
     {
-        $config = Plugin::getConfig("TicketNotify");
+        $config = Plugin::getConfig("Demo");
         $isLog = isset($config['log']) && (bool)$config['log'];
 
         if ($event === 'create' && (!isset($config['notify_create']) || !(bool)$config['notify_create'])) {
@@ -54,14 +42,14 @@ class Main
         $url = isset($config['url']) ? trim((string)$config['url']) : '';
         if ($url === '') {
             if ($isLog) {
-                Plugin::log("TicketNotify", "未配置 API 地址，跳过工单提醒（事件：{$event}）");
+                Plugin::log("Demo", "未配置 API 地址，跳过工单提醒（事件：{$event}）");
             }
             return;
         }
 
         try {
             if ($isLog) {
-                Plugin::log("TicketNotify", "捕获到工单事件：{$event}，工单号：{$ticket->ticket_no}，准备请求API：{$url}");
+                Plugin::log("Demo", "捕获到工单事件：{$event}，工单号：{$ticket->ticket_no}，准备请求API：{$url}");
             }
 
             $headers = [];
@@ -98,7 +86,7 @@ class Main
             $data['sign'] = Str::generateSignature($data, (string)($config['key'] ?? ''));
 
             if ($isLog) {
-                Plugin::log("TicketNotify", "本地生成签名：" . $data['sign']);
+                Plugin::log("Demo", "本地生成签名：" . $data['sign']);
             }
 
             if ((int)($config['request_type'] ?? 0) === 0) {
@@ -108,11 +96,11 @@ class Main
             }
 
             if ($isLog) {
-                Plugin::log("TicketNotify", "请求完成，返回结果：" . $response->getBody()->getContents());
+                Plugin::log("Demo", "请求完成，返回结果：" . $response->getBody()->getContents());
             }
         } catch (\Error | \Exception $e) {
             if ($isLog) {
-                Plugin::log("TicketNotify", "请求失败，错误原因：" . $e->getMessage());
+                Plugin::log("Demo", "请求失败，错误原因：" . $e->getMessage());
             }
         }
     }
