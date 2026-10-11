@@ -2,12 +2,12 @@
 declare(strict_types=1);
 
 return array (
-  'STATUS' => '1',
+  'STATUS' => '0',
   'top' => '0',
   'request_type' => '0',
-  'key' => 'tk_9f3c7a1e5b2d8460',
+  'key' => '',                              // 与接收端 TICKET_KEY 一致的通信密钥，请在后台填写
   'sign_type' => '0',
-  'url' => 'http://127.0.0.1:8000/ticket',
+  'url' => '',                              // 接收端地址，例如 http://127.0.0.1:8000/ticket
   'headers' => '',
   'param' => '',
   'log' => '1',

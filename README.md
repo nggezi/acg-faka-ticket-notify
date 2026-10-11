@@ -85,15 +85,31 @@ flask/app.py                   # 配套 Flask 接收端（含订单 /recharge + 
 
 `flask/app.py` 基于原订单通知服务扩展，新增 `POST /ticket`：
 
-- 使用独立密钥 `TICKET_KEY` 校验签名（与订单的 `APP_KEY` 分开）。
+- 使用独立密钥 `TICKET_KEY` 校验签名（与订单的 `RECHARGE_KEY` 分开）。
 - 校验 `data.type == "ticket"`，非工单内容直接拒绝，避免与订单混流。
 - 推送格式为工单专用样式（含工单号、标题、类型、优先级、状态、关联商品/订单、发送人、内容）。
+- 对标题/发送人/内容做 HTML 清洗（去除富文本标签、转义实体），避免推送里出现 `<p>...</p>`。
 - 日志写入 `ticket.txt`。
+
+### 配置（环境变量）
+
+敏感信息**不要写死在代码里**，通过环境变量注入：
+
+| 环境变量 | 说明 |
+| --- | --- |
+| `RECHARGE_KEY` | 订单接口 `/recharge` 的通信密钥（与订单插件一致） |
+| `TICKET_KEY` | 工单接口 `/ticket` 的通信密钥（与本插件配置页里填的密钥一致） |
+| `TG_BOT_TOKEN` | Telegram Bot Token |
+| `TG_CHAT_ID` | Telegram 接收消息的 Chat ID |
 
 启动（示例，使用 systemd 或直接运行）：
 
 ```bash
 pip install flask requests
+export RECHARGE_KEY="你的订单密钥"
+export TICKET_KEY="你的工单密钥"
+export TG_BOT_TOKEN="你的Bot Token"
+export TG_CHAT_ID="你的Chat ID"
 python app.py            # 监听 0.0.0.0:8000
 ```
 

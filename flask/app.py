@@ -4,15 +4,17 @@ import urllib.parse
 import json
 import re
 import html
+import os
 import requests
 
 app = Flask(__name__)
 
-# ===== 配置（根据你提供的信息） =====
-APP_KEY = "bda90f8358af139b"          # 订单接口密钥（/recharge），保持不变
-TICKET_KEY = "tk_9f3c7a1e5b2d8460"    # 工单接口独立密钥（/ticket），与订单分开
-TG_BOT_TOKEN = "8020346768:AAE4iTCYNPhxanT-A2Gc22FEphEpdXbJSfo"
-TG_CHAT_ID = "1275674390"
+# ===== 配置 =====
+# 建议用环境变量注入，不要硬编码在代码里
+APP_KEY = os.environ.get("RECHARGE_KEY", "your_recharge_key")      # 订单接口密钥（/recharge）
+TICKET_KEY = os.environ.get("TICKET_KEY", "your_ticket_key")       # 工单接口独立密钥（/ticket），与订单分开
+TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "your_telegram_bot_token")
+TG_CHAT_ID = os.environ.get("TG_CHAT_ID", "your_telegram_chat_id")
 
 
 # ===== 发送 Telegram 消息 =====
