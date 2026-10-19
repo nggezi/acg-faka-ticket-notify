@@ -1,0 +1,6 @@
+{
+  "RECHARGE_KEY": "你的订单密钥",
+  "TICKET_KEY": "你的工单密钥",
+  "TG_BOT_TOKEN": "你的Bot Token",
+  "TG_CHAT_ID": "你的Chat ID"
+}

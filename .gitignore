@@ -1,0 +1,9 @@
+*.log
+runtime.log
+__pycache__/
+*.pyc
+.venv/
+venv/
+config.json
+flask/config.json
+.env
